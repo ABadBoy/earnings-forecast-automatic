@@ -1,2 +1,9 @@
 pypdf>=4.0.0
-
+html5lib
+lxml
+pdfplumber
+pydantic
+openai
+requests
+markdown>=3.0.0
+python-dotenv
