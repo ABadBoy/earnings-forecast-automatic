@@ -41,23 +41,19 @@ WECHAT_THUMB_MEDIA_ID=your_cover_image_media_id
 To run the entire pipeline (Fetch -> Parse -> LLM Write -> WeChat Publish) for a specific date:
 
 ```powershell
-python -m earnings_forecast run-cninfo --date 2026-07-01 --use-llm --publish
+python -m earnings_forecast --use-llm --publish run-cninfo --date 2026-07-01
 ```
 
 **Arguments:**
+- `--use-llm`: Enables the LLM pipeline instead of static templates. (Must be placed before the subcommand)
+- `--publish`: Automatically publishes the result to the WeChat Draft box. (Must be placed before the subcommand)
+- `run-cninfo` / `run-sample`: The subcommand to run.
 - `--date`: The date of the announcements to fetch (e.g., `2026-07-01`).
-- `--use-llm`: Enables the LLM pipeline instead of static templates.
-- `--publish`: Automatically publishes the result to the WeChat Draft box.
 - `--max-pages`: (Optional) The maximum number of CNINFO pages to crawl.
 - `--limit`: (Optional) The maximum number of PDFs to process.
 
-### 4. Utilities
-
-To list the image materials currently uploaded to your WeChat Official Account (to find a valid `WECHAT_THUMB_MEDIA_ID` for your covers):
-
-```powershell
-python list_materials.py
-```
+> **Note on WeChat Publishing (IP Whitelist):**
+> If you encounter `errcode: 40164, errmsg: 'invalid ip ..., not in whitelist ...'` during publishing, it means your machine's IP is not allowed to call the WeChat API. You must log into the WeChat Official Account Admin Platform -> **Settings & Development** -> **Basic Configuration** -> **Developer IP Whitelist**, and add your current IP address there.
 
 ## Generated Artifacts
 
