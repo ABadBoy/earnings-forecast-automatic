@@ -72,7 +72,7 @@ def render_article_with_llm(announcements: List[Announcement], report_date: date
     # 3. 组装最终的 Markdown (直接加上标题和声明)
     title = f"{settings.brand_name}：{report_date.isoformat()} 业绩增长公司概览"
     
-    final_markdown = f"# {title}\n\n{llm_content}\n\n## 数据说明\n\n本文内容由 AI 根据上市公司正式公告原始文本辅助生成。内容仅用于信息整理，不构成投资建议。"
+    final_markdown = f"# {title}\n\n{llm_content}\n\n## 数据说明\n\n以上业绩预告数据均为各公司财务部门初步测算结果，具体财务数据以各公司正式披露的2026年半年度报告为准。"
     
     # 4. 渲染为 HTML
     html_body = markdown.markdown(final_markdown)
