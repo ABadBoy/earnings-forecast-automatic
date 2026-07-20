@@ -49,7 +49,7 @@ class CninfoParseResult:
 def fetch_cninfo_announcements(
     target_date: date,
     *,
-    search_key: str = "业绩预告",
+    search_key: str = "",
     page_size: int = 30,
     max_pages: int = 3,
 ) -> list[CninfoAnnouncement]:
@@ -136,6 +136,22 @@ def download_and_parse_announcements_with_failures(
     return CninfoParseResult(announcements=announcements, failures=failures)
 
 
+def _urlopen_with_retry(request: Request, timeout: float = 30.0, retries: int = 3, delay: float = 2.0) -> bytes:
+    for attempt in range(retries):
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return response.read()
+        except (HTTPError, URLError, TimeoutError) as exc:
+            # Only retry on 5xx server errors or transient network/timeout errors
+            is_server_error = isinstance(exc, HTTPError) and exc.code >= 500
+            is_network_error = not isinstance(exc, HTTPError)
+            if (is_server_error or is_network_error) and attempt < retries - 1:
+                time.sleep(delay * (2 ** attempt))
+                continue
+            raise
+    raise CninfoError("Unexpected retry exhaustion")
+
+
 def download_pdf(item: CninfoAnnouncement, download_dir: Path) -> Path:
     safe_name = _safe_filename(f"{item.stock_code}_{item.announcement_id}.pdf")
     path = download_dir / safe_name
@@ -144,8 +160,7 @@ def download_pdf(item: CninfoAnnouncement, download_dir: Path) -> Path:
 
     request = Request(item.pdf_url, headers={**DEFAULT_HEADERS, "Accept": "application/pdf,*/*"})
     try:
-        with urlopen(request, timeout=30) as response:
-            content = response.read()
+        content = _urlopen_with_retry(request, timeout=30)
     except (HTTPError, URLError, TimeoutError) as exc:
         raise CninfoError(f"Failed to download PDF {item.pdf_url}: {exc}") from exc
 
@@ -166,7 +181,7 @@ def _query_page(target_date: date, search_key: str, page_num: int, page_size: in
             "stock": "",
             "searchkey": search_key,
             "secid": "",
-            "category": "category_yjyg_szsh",
+            "category": "category_yjygjxz_szsh",
             "trade": "",
             "seDate": f"{target_date.isoformat()}~{target_date.isoformat()}",
             "sortName": "",
@@ -176,8 +191,8 @@ def _query_page(target_date: date, search_key: str, page_num: int, page_size: in
     ).encode("utf-8")
     request = Request(CNINFO_QUERY_URL, data=encoded, headers=DEFAULT_HEADERS, method="POST")
     try:
-        with urlopen(request, timeout=30) as response:
-            body = response.read().decode("utf-8")
+        content = _urlopen_with_retry(request, timeout=30)
+        body = content.decode("utf-8")
     except (HTTPError, URLError, TimeoutError) as exc:
         raise CninfoError(f"Failed to query CNINFO announcements: {exc}") from exc
 
